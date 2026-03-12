@@ -21,9 +21,22 @@ func (s *SyncService) Sync(ctx context.Context, userUUID string, req SyncRequest
 		return SyncResponse{}, err
 	}
 
-	// 1. Мержим пресеты по ID (клиентские перезаписывают серверные)
-	presetMap := make(map[string]domain.Preset)
+	// === 1. ВЫКИДЫВАЕМ ИЗ ПАМЯТИ ТО, ЧТО УДАЛИЛ ЮЗЕР ===
+	deletedMap := make(map[string]bool)
+	for _, id := range req.DeletedPresetIDs {
+		deletedMap[id] = true
+	}
+
+	var filteredServerPresets []domain.Preset
 	for _, p := range serverPresets {
+		if !deletedMap[p.ID] { // Оставляем только те, которых НЕТ в списке на удаление
+			filteredServerPresets = append(filteredServerPresets, p)
+		}
+	}
+
+	// === 2. МЕРЖИМ ОСТАВШЕЕСЯ ===
+	presetMap := make(map[string]domain.Preset)
+	for _, p := range filteredServerPresets {
 		presetMap[p.ID] = p
 	}
 	for _, p := range req.LocalPresets {
@@ -34,6 +47,8 @@ func (s *SyncService) Sync(ctx context.Context, userUUID string, req SyncRequest
 	for _, p := range presetMap {
 		mergedPresets = append(mergedPresets, p)
 	}
+
+	// ... дальше идет код для LocalHistory (его не трогай, оставляй как было)
 
 	// 2. Мержим историю по Date (дедубликация)
 	historyMap := make(map[int64]domain.HistoryItem)

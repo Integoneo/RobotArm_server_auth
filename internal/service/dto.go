@@ -63,6 +63,7 @@ type SupportImage struct {
 type SyncRequest struct {
 	LocalPresets []domain.Preset      `json:"localPresets"`
 	LocalHistory []domain.HistoryItem `json:"localHistory"`
+	DeletedPresetIDs []string         `json:"deletedPresetIDs"` // <-- ДОБАВИТЬ ЭТО
 }
 
 type SyncResponse struct {
